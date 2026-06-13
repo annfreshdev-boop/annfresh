@@ -3,6 +3,33 @@
 -- Run this in: Supabase Dashboard > SQL Editor > New Query
 -- ============================================================
 
+-- ============================================================
+-- Storage bucket for salad images
+-- ============================================================
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('salad-images', 'salad-images', true)
+ON CONFLICT (id) DO NOTHING;
+
+-- Anyone can view salad images
+CREATE POLICY "public read salad images"
+  ON storage.objects FOR SELECT TO anon
+  USING (bucket_id = 'salad-images');
+
+-- Only logged-in admin can upload
+CREATE POLICY "admin upload salad images"
+  ON storage.objects FOR INSERT TO authenticated
+  WITH CHECK (bucket_id = 'salad-images');
+
+-- Only logged-in admin can replace/update
+CREATE POLICY "admin update salad images"
+  ON storage.objects FOR UPDATE TO authenticated
+  USING (bucket_id = 'salad-images');
+
+-- Only logged-in admin can delete
+CREATE POLICY "admin delete salad images"
+  ON storage.objects FOR DELETE TO authenticated
+  USING (bucket_id = 'salad-images');
+
 -- Settings (WhatsApp number, store email, etc.)
 CREATE TABLE IF NOT EXISTS settings (
   id         UUID DEFAULT gen_random_uuid() PRIMARY KEY,
