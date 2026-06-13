@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls /Applications/ | grep -i node; which -a node 2>/dev/null; type node 2>/dev/null)",
+      "Read(//Applications/**)",
+      "Bash(mkdir -p /Users/deepak/Documents/Projects/Annfresh/src/app/admin/login)",
+      "Bash(mkdir -p /Users/deepak/Documents/Projects/Annfresh/src/components/home)",
+      "Bash(mkdir -p /Users/deepak/Documents/Projects/Annfresh/src/components/admin)",
+      "Bash(mkdir -p /Users/deepak/Documents/Projects/Annfresh/src/lib)",
+      "Bash(mkdir -p /Users/deepak/Documents/Projects/Annfresh/src/types)",
+      "Bash(git --version)",
+      "Bash(brew --version)",
+      "Read(//Users/deepak/**)",
+      "Bash(brew install *)"
+    ]
+  }
+}
