@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef } from 'react'
-import { Plus, Pencil, Trash2, X, Check, Flame, Upload, ImagePlus } from 'lucide-react'
+import { Plus, Pencil, Trash2, X, Check, Flame, ImagePlus } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import type { Salad } from '@/types'
 
@@ -20,6 +20,24 @@ const empty = (): Omit<Salad, 'id' | 'created_at'> => ({
   is_active: true,
 })
 
+// Extract the file path inside the salad-images bucket from a public URL
+function getStoragePath(url: string): string | null {
+  try {
+    const marker = '/object/public/salad-images/'
+    const idx = url.indexOf(marker)
+    if (idx === -1) return null
+    return decodeURIComponent(url.slice(idx + marker.length))
+  } catch {
+    return null
+  }
+}
+
+async function deleteFromStorage(url: string | null) {
+  if (!url) return
+  const path = getStoragePath(url)
+  if (path) await supabase.storage.from('salad-images').remove([path])
+}
+
 export default function SaladsManager({ initialSalads }: Props) {
   const [salads, setSalads] = useState<Salad[]>(initialSalads)
   const [form, setForm] = useState(empty())
@@ -27,9 +45,10 @@ export default function SaladsManager({ initialSalads }: Props) {
   const [showForm, setShowForm] = useState(false)
   const [ingredientsRaw, setIngredientsRaw] = useState('')
 
-  // Image upload state
+  // Image state
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const [originalImageUrl, setOriginalImageUrl] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [saving, setSaving] = useState(false)
@@ -40,6 +59,7 @@ export default function SaladsManager({ initialSalads }: Props) {
     setIngredientsRaw('')
     setImageFile(null)
     setImagePreview(null)
+    setOriginalImageUrl(null)
     setEditId(null)
     setShowForm(true)
     setError('')
@@ -54,6 +74,7 @@ export default function SaladsManager({ initialSalads }: Props) {
     setIngredientsRaw(s.ingredients.join(', '))
     setImageFile(null)
     setImagePreview(s.image_url ?? null)
+    setOriginalImageUrl(s.image_url ?? null)
     setEditId(s.id)
     setShowForm(true)
     setError('')
@@ -94,9 +115,14 @@ export default function SaladsManager({ initialSalads }: Props) {
     let finalImageUrl = form.image_url
 
     if (imageFile) {
+      // New image selected — delete old one from Storage first
+      await deleteFromStorage(originalImageUrl)
       const uploaded = await uploadImage(imageFile)
       if (!uploaded) { setSaving(false); return }
       finalImageUrl = uploaded
+    } else if (form.image_url === null && originalImageUrl) {
+      // Image was removed — delete old one from Storage
+      await deleteFromStorage(originalImageUrl)
     }
 
     const payload = {
@@ -120,8 +146,15 @@ export default function SaladsManager({ initialSalads }: Props) {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm('Delete this salad?')) return
-    await supabase.from('salads').delete().eq('id', id)
+    if (!confirm('Delete this salad? This cannot be undone.')) return
+    const salad = salads.find((s) => s.id === id)
+
+    const { error: e } = await supabase.from('salads').delete().eq('id', id)
+    if (e) { alert('Delete failed: ' + e.message); return }
+
+    // Remove image from Storage too
+    await deleteFromStorage(salad?.image_url ?? null)
+
     setSalads((prev) => prev.filter((s) => s.id !== id))
   }
 
@@ -157,8 +190,7 @@ export default function SaladsManager({ initialSalads }: Props) {
             </div>
 
             <div className="p-6 space-y-4">
-
-              {/* Image upload area */}
+              {/* Image upload */}
               <div>
                 <label className="text-gray-400 text-xs font-semibold mb-1.5 block uppercase tracking-wider">
                   Salad Photo
@@ -170,25 +202,24 @@ export default function SaladsManager({ initialSalads }: Props) {
                   onChange={handleFileChange}
                   className="hidden"
                 />
-
                 {imagePreview ? (
                   <div className="relative rounded-xl overflow-hidden h-44 bg-[#1a1a1a] border border-[#2a2a2a]">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
-                    <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+                    <div className="absolute inset-0 bg-black/50 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
                       <button
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
-                        className="flex items-center gap-1.5 bg-white text-black text-xs font-bold px-3 py-2 rounded-lg"
+                        className="bg-white text-black text-xs font-bold px-3 py-2 rounded-lg"
                       >
-                        <Upload size={13} /> Change
+                        Change
                       </button>
                       <button
                         type="button"
                         onClick={removeImage}
-                        className="flex items-center gap-1.5 bg-red-500 text-white text-xs font-bold px-3 py-2 rounded-lg"
+                        className="bg-red-500 text-white text-xs font-bold px-3 py-2 rounded-lg"
                       >
-                        <X size={13} /> Remove
+                        Remove
                       </button>
                     </div>
                   </div>
@@ -210,101 +241,48 @@ export default function SaladsManager({ initialSalads }: Props) {
               </div>
 
               <Field label="Name">
-                <input
-                  value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  placeholder="Caesar Salad"
-                  className={inp}
-                />
+                <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Caesar Salad" className={inp} />
               </Field>
 
               <Field label="Type">
-                <select
-                  value={form.type}
-                  onChange={(e) => setForm({ ...form, type: e.target.value as 'veg' | 'non-veg' })}
-                  className={inp}
-                >
+                <select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value as 'veg' | 'non-veg' })} className={inp}>
                   <option value="veg">Veg</option>
                   <option value="non-veg">Non-Veg</option>
                 </select>
               </Field>
 
               <Field label="Description">
-                <textarea
-                  value={form.description}
-                  onChange={(e) => setForm({ ...form, description: e.target.value })}
-                  rows={2}
-                  placeholder="A refreshing mix of..."
-                  className={inp + ' resize-none'}
-                />
+                <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={2} placeholder="A refreshing mix of..." className={inp + ' resize-none'} />
               </Field>
 
               <Field label="Ingredients (comma separated)">
-                <input
-                  value={ingredientsRaw}
-                  onChange={(e) => setIngredientsRaw(e.target.value)}
-                  placeholder="Lettuce, Tomato, Croutons"
-                  className={inp}
-                />
+                <input value={ingredientsRaw} onChange={(e) => setIngredientsRaw(e.target.value)} placeholder="Lettuce, Tomato, Croutons" className={inp} />
               </Field>
 
               <div className="grid grid-cols-2 gap-4">
                 <Field label="Calories (kcal)">
-                  <input
-                    type="number"
-                    value={form.calories || ''}
-                    onChange={(e) => setForm({ ...form, calories: Number(e.target.value) })}
-                    placeholder="320"
-                    className={inp}
-                  />
+                  <input type="number" value={form.calories || ''} onChange={(e) => setForm({ ...form, calories: Number(e.target.value) })} placeholder="320" className={inp} />
                 </Field>
                 <Field label="Price (₹)">
-                  <input
-                    type="number"
-                    value={form.price || ''}
-                    onChange={(e) => setForm({ ...form, price: Number(e.target.value) })}
-                    placeholder="199"
-                    className={inp}
-                  />
+                  <input type="number" value={form.price || ''} onChange={(e) => setForm({ ...form, price: Number(e.target.value) })} placeholder="199" className={inp} />
                 </Field>
               </div>
 
               <label className="flex items-center gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={form.is_active}
-                  onChange={(e) => setForm({ ...form, is_active: e.target.checked })}
-                  className="w-4 h-4 accent-green-500"
-                />
+                <input type="checkbox" checked={form.is_active} onChange={(e) => setForm({ ...form, is_active: e.target.checked })} className="w-4 h-4 accent-green-500" />
                 <span className="text-gray-300 text-sm">Active (visible on website)</span>
               </label>
 
-              {error && (
-                <p className="text-red-400 text-sm bg-red-400/10 border border-red-400/20 rounded-lg px-3 py-2">
-                  {error}
-                </p>
-              )}
+              {error && <p className="text-red-400 text-sm bg-red-400/10 border border-red-400/20 rounded-lg px-3 py-2">{error}</p>}
 
               <div className="flex gap-3 pt-2">
-                <button
-                  onClick={() => setShowForm(false)}
-                  className="flex-1 bg-[#1a1a1a] hover:bg-[#2a2a2a] border border-[#2a2a2a] text-white font-semibold py-2.5 rounded-xl text-sm transition-colors"
-                >
+                <button onClick={() => setShowForm(false)} className="flex-1 bg-[#1a1a1a] hover:bg-[#2a2a2a] border border-[#2a2a2a] text-white font-semibold py-2.5 rounded-xl text-sm transition-colors">
                   Cancel
                 </button>
-                <button
-                  onClick={handleSave}
-                  disabled={saving}
-                  className="flex-1 bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white font-bold py-2.5 rounded-xl text-sm flex items-center justify-center gap-2 transition-colors"
-                >
-                  {saving ? (
-                    <>
-                      <span className="animate-spin border-2 border-white/30 border-t-white rounded-full w-3.5 h-3.5" />
-                      {imageFile ? 'Uploading...' : 'Saving...'}
-                    </>
-                  ) : (
-                    <><Check size={14} /> Save</>
-                  )}
+                <button onClick={handleSave} disabled={saving} className="flex-1 bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white font-bold py-2.5 rounded-xl text-sm flex items-center justify-center gap-2 transition-colors">
+                  {saving
+                    ? <><span className="animate-spin border-2 border-white/30 border-t-white rounded-full w-3.5 h-3.5" />{imageFile ? 'Uploading...' : 'Saving...'}</>
+                    : <><Check size={14} /> Save</>}
                 </button>
               </div>
             </div>
@@ -312,7 +290,7 @@ export default function SaladsManager({ initialSalads }: Props) {
         </div>
       )}
 
-      {/* Salad list */}
+      {/* List */}
       {salads.length === 0 ? (
         <div className="text-center py-16 text-gray-500 border border-dashed border-[#2a2a2a] rounded-2xl">
           No salads yet. Add your first one!
@@ -321,35 +299,22 @@ export default function SaladsManager({ initialSalads }: Props) {
         <div className="space-y-3">
           {salads.map((s) => (
             <div key={s.id} className="flex items-center gap-4 bg-[#111111] border border-[#2a2a2a] rounded-xl p-4">
-              {/* Thumbnail */}
               <div className="w-12 h-12 bg-[#1a1a1a] rounded-lg flex items-center justify-center shrink-0 overflow-hidden border border-[#2a2a2a]">
-                {s.image_url ? (
+                {s.image_url
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={s.image_url} alt={s.name} className="w-full h-full object-cover" />
-                ) : (
-                  <span className="text-2xl">🥗</span>
-                )}
+                  ? <img src={s.image_url} alt={s.name} className="w-full h-full object-cover" />
+                  : <span className="text-2xl">🥗</span>}
               </div>
 
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <span className="text-white font-bold text-sm truncate">{s.name}</span>
-                  <span
-                    className={`text-xs px-1.5 py-0.5 rounded-full font-semibold shrink-0 ${
-                      s.type === 'veg'
-                        ? 'bg-green-600/20 text-green-400'
-                        : 'bg-red-600/20 text-red-400'
-                    }`}
-                  >
+                  <span className={`text-xs px-1.5 py-0.5 rounded-full font-semibold shrink-0 ${s.type === 'veg' ? 'bg-green-600/20 text-green-400' : 'bg-red-600/20 text-red-400'}`}>
                     {s.type === 'veg' ? '🌿 Veg' : '🍗 Non-Veg'}
                   </span>
                 </div>
                 <div className="flex items-center gap-3 mt-0.5 text-xs text-gray-500">
-                  {s.calories > 0 && (
-                    <span className="flex items-center gap-0.5">
-                      <Flame size={10} />{s.calories} kcal
-                    </span>
-                  )}
+                  {s.calories > 0 && <span className="flex items-center gap-0.5"><Flame size={10} />{s.calories} kcal</span>}
                   {s.price > 0 && <span>₹{s.price}</span>}
                   {s.ingredients?.length > 0 && <span>{s.ingredients.length} ingredients</span>}
                 </div>
@@ -358,26 +323,12 @@ export default function SaladsManager({ initialSalads }: Props) {
               <div className="flex items-center gap-2 shrink-0">
                 <button
                   onClick={() => toggleActive(s)}
-                  className={`text-xs px-2.5 py-1 rounded-full font-semibold border transition-colors ${
-                    s.is_active
-                      ? 'bg-green-600/10 text-green-400 border-green-600/30 hover:bg-green-600/20'
-                      : 'bg-[#1a1a1a] text-gray-500 border-[#2a2a2a] hover:border-gray-500'
-                  }`}
+                  className={`text-xs px-2.5 py-1 rounded-full font-semibold border transition-colors ${s.is_active ? 'bg-green-600/10 text-green-400 border-green-600/30 hover:bg-green-600/20' : 'bg-[#1a1a1a] text-gray-500 border-[#2a2a2a] hover:border-gray-500'}`}
                 >
                   {s.is_active ? 'Live' : 'Hidden'}
                 </button>
-                <button
-                  onClick={() => openEdit(s)}
-                  className="text-gray-500 hover:text-white p-1.5 hover:bg-[#2a2a2a] rounded-lg transition-colors"
-                >
-                  <Pencil size={14} />
-                </button>
-                <button
-                  onClick={() => handleDelete(s.id)}
-                  className="text-gray-500 hover:text-red-400 p-1.5 hover:bg-red-400/10 rounded-lg transition-colors"
-                >
-                  <Trash2 size={14} />
-                </button>
+                <button onClick={() => openEdit(s)} className="text-gray-500 hover:text-white p-1.5 hover:bg-[#2a2a2a] rounded-lg transition-colors"><Pencil size={14} /></button>
+                <button onClick={() => handleDelete(s.id)} className="text-gray-500 hover:text-red-400 p-1.5 hover:bg-red-400/10 rounded-lg transition-colors"><Trash2 size={14} /></button>
               </div>
             </div>
           ))}
@@ -390,13 +341,10 @@ export default function SaladsManager({ initialSalads }: Props) {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="text-gray-400 text-xs font-semibold mb-1.5 block uppercase tracking-wider">
-        {label}
-      </label>
+      <label className="text-gray-400 text-xs font-semibold mb-1.5 block uppercase tracking-wider">{label}</label>
       {children}
     </div>
   )
 }
 
-const inp =
-  'w-full bg-[#1a1a1a] border border-[#2a2a2a] text-white placeholder-gray-600 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-green-600 transition-colors'
+const inp = 'w-full bg-[#1a1a1a] border border-[#2a2a2a] text-white placeholder-gray-600 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-green-600 transition-colors'

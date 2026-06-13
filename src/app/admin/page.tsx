@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Leaf, LogOut, Salad, Tag, Settings, ExternalLink, CalendarDays } from 'lucide-react'
+import { Leaf, LogOut, Salad, Tag, Settings, ExternalLink, CalendarDays, TrendingUp } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import SaladsManager from '@/components/admin/SaladsManager'
 import AdsManager from '@/components/admin/AdsManager'
@@ -27,23 +27,37 @@ export default function AdminDashboard() {
   const [ads, setAds] = useState<Ad[]>([])
   const [plans, setPlans] = useState<Plan[]>([])
   const [settings, setSettings] = useState<Setting[]>([])
+  const [visits, setVisits] = useState({ total: 0, today: 0, week: 0 })
 
   useEffect(() => {
     async function init() {
       const { data: sessionData } = await supabase.auth.getSession()
       if (!sessionData.session) { router.replace('/admin/login'); return }
 
-      const [s, a, p, st] = await Promise.all([
+      const todayStart = new Date()
+      todayStart.setHours(0, 0, 0, 0)
+      const weekStart = new Date()
+      weekStart.setDate(weekStart.getDate() - 7)
+
+      const [s, a, p, st, vTotal, vToday, vWeek] = await Promise.all([
         supabase.from('salads').select('*').order('created_at', { ascending: false }),
         supabase.from('ads').select('*').order('created_at', { ascending: false }),
         supabase.from('plans').select('*').order('price', { ascending: true }),
         supabase.from('settings').select('*'),
+        supabase.from('page_visits').select('*', { count: 'exact', head: true }),
+        supabase.from('page_visits').select('*', { count: 'exact', head: true }).gte('visited_at', todayStart.toISOString()),
+        supabase.from('page_visits').select('*', { count: 'exact', head: true }).gte('visited_at', weekStart.toISOString()),
       ])
 
       setSalads((s.data ?? []) as SaladType[])
       setAds((a.data ?? []) as Ad[])
       setPlans((p.data ?? []) as Plan[])
       setSettings((st.data ?? []) as Setting[])
+      setVisits({
+        total: vTotal.count ?? 0,
+        today: vToday.count ?? 0,
+        week: vWeek.count ?? 0,
+      })
       setLoading(false)
     }
     init()
@@ -98,12 +112,40 @@ export default function AdminDashboard() {
       </header>
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
+
+        {/* Page visits banner */}
+        <div className="bg-gradient-to-r from-green-600/10 to-[#111111] border border-green-600/20 rounded-2xl p-5 mb-6 flex flex-wrap items-center gap-6">
+          <div className="flex items-center gap-3">
+            <div className="bg-green-600/20 border border-green-600/30 p-2.5 rounded-xl">
+              <TrendingUp size={18} className="text-green-400" />
+            </div>
+            <div>
+              <p className="text-gray-400 text-xs font-semibold uppercase tracking-wider">Page Visits</p>
+              <p className="text-white font-black text-2xl">{visits.total.toLocaleString()}</p>
+              <p className="text-gray-500 text-xs">all time</p>
+            </div>
+          </div>
+
+          <div className="h-10 w-px bg-[#2a2a2a] hidden sm:block" />
+
+          <div>
+            <p className="text-gray-400 text-xs font-semibold uppercase tracking-wider">Today</p>
+            <p className="text-white font-bold text-xl">{visits.today.toLocaleString()}</p>
+          </div>
+
+          <div className="h-10 w-px bg-[#2a2a2a] hidden sm:block" />
+
+          <div>
+            <p className="text-gray-400 text-xs font-semibold uppercase tracking-wider">Last 7 Days</p>
+            <p className="text-white font-bold text-xl">{visits.week.toLocaleString()}</p>
+          </div>
+        </div>
+
         {/* Stats row */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
           <StatCard label="Total Salads" value={salads.length} sub={`${salads.filter((s) => s.is_active).length} active`} />
           <StatCard label="Active Plans" value={activePlans} sub={`${plans.length} total`} />
           <StatCard label="Active Ads" value={activeAds} sub={`${ads.length} total`} />
-          <StatCard label="WhatsApp" value={1} sub="Configurable in Settings" />
         </div>
 
         {/* Tabs */}

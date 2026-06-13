@@ -6,6 +6,7 @@ import AdsBanner from '@/components/home/AdsBanner'
 import SaladsSection from '@/components/home/SaladsSection'
 import PlansSection from '@/components/home/PlansSection'
 import ContactSection from '@/components/home/ContactSection'
+import TrackVisit from '@/components/TrackVisit'
 import type { Salad, Ad, Plan } from '@/types'
 
 async function getData() {
@@ -55,6 +56,7 @@ export default async function HomePage() {
 
   return (
     <main className="bg-white dark:bg-[#0a0a0a] min-h-screen">
+      <TrackVisit path="/" />
       <Navbar />
       <Hero />
       <AdsBanner ads={ads} />

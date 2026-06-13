@@ -184,3 +184,23 @@ INSERT INTO ads (title, subtitle, discount_text, bg_color, is_active, expires_at
     NOW() + INTERVAL '30 days'
   )
 ON CONFLICT DO NOTHING;
+
+-- ============================================================
+-- Page visit tracking
+-- Run this block separately if you already ran the schema above
+-- ============================================================
+CREATE TABLE IF NOT EXISTS page_visits (
+  id         UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  path       TEXT NOT NULL DEFAULT '/',
+  visited_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE page_visits ENABLE ROW LEVEL SECURITY;
+
+-- Anyone (visitor) can record a visit
+CREATE POLICY "public insert visits" ON page_visits
+  FOR INSERT TO anon WITH CHECK (true);
+
+-- Only admin can read visit data
+CREATE POLICY "admin read visits" ON page_visits
+  FOR SELECT TO authenticated USING (true);
