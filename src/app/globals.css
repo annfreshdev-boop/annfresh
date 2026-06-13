@@ -24,10 +24,15 @@ html {
 }
 
 body {
-  background-color: var(--bg);
-  color: #f1f5f9;
+  background-color: #ffffff;
+  color: #0f172a;
   font-family: 'Inter', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
+}
+
+.dark body {
+  background-color: var(--bg);
+  color: #f1f5f9;
 }
 
 /* Custom scrollbar */

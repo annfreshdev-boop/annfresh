@@ -26,6 +26,7 @@ export interface Plan {
   id: string
   name: string
   duration: 'daily' | 'weekly' | 'monthly'
+  days_count: number | null
   price: number
   description: string
   features: string[]

@@ -2,17 +2,19 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Leaf, LogOut, Salad, Tag, Settings, ExternalLink } from 'lucide-react'
+import { Leaf, LogOut, Salad, Tag, Settings, ExternalLink, CalendarDays } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import SaladsManager from '@/components/admin/SaladsManager'
 import AdsManager from '@/components/admin/AdsManager'
+import PlansManager from '@/components/admin/PlansManager'
 import SettingsManager from '@/components/admin/SettingsManager'
-import type { Salad as SaladType, Ad, Setting } from '@/types'
+import type { Salad as SaladType, Ad, Plan, Setting } from '@/types'
 
-type Tab = 'salads' | 'ads' | 'settings'
+type Tab = 'salads' | 'plans' | 'ads' | 'settings'
 
 const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
   { id: 'salads', label: 'Salads', icon: <Salad size={16} /> },
+  { id: 'plans', label: 'Plans', icon: <CalendarDays size={16} /> },
   { id: 'ads', label: 'Ads & Offers', icon: <Tag size={16} /> },
   { id: 'settings', label: 'Settings', icon: <Settings size={16} /> },
 ]
@@ -23,6 +25,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true)
   const [salads, setSalads] = useState<SaladType[]>([])
   const [ads, setAds] = useState<Ad[]>([])
+  const [plans, setPlans] = useState<Plan[]>([])
   const [settings, setSettings] = useState<Setting[]>([])
 
   useEffect(() => {
@@ -30,14 +33,16 @@ export default function AdminDashboard() {
       const { data: sessionData } = await supabase.auth.getSession()
       if (!sessionData.session) { router.replace('/admin/login'); return }
 
-      const [s, a, st] = await Promise.all([
+      const [s, a, p, st] = await Promise.all([
         supabase.from('salads').select('*').order('created_at', { ascending: false }),
         supabase.from('ads').select('*').order('created_at', { ascending: false }),
+        supabase.from('plans').select('*').order('price', { ascending: true }),
         supabase.from('settings').select('*'),
       ])
 
       setSalads((s.data ?? []) as SaladType[])
       setAds((a.data ?? []) as Ad[])
+      setPlans((p.data ?? []) as Plan[])
       setSettings((st.data ?? []) as Setting[])
       setLoading(false)
     }
@@ -60,6 +65,9 @@ export default function AdminDashboard() {
     )
   }
 
+  const activePlans = plans.filter((p) => p.is_active).length
+  const activeAds = ads.filter((a) => a.is_active && (!a.expires_at || new Date(a.expires_at) > new Date())).length
+
   return (
     <div className="min-h-screen bg-[#0a0a0a]">
       {/* Top bar */}
@@ -76,11 +84,7 @@ export default function AdminDashboard() {
           </div>
 
           <div className="flex items-center gap-3">
-            <a
-              href="/"
-              target="_blank"
-              className="flex items-center gap-1.5 text-gray-400 hover:text-white text-xs font-medium transition-colors"
-            >
+            <a href="/" target="_blank" className="flex items-center gap-1.5 text-gray-400 hover:text-white text-xs font-medium transition-colors">
               <ExternalLink size={13} /> View Site
             </a>
             <button
@@ -95,22 +99,21 @@ export default function AdminDashboard() {
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
         {/* Stats row */}
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
-          <StatCard label="Total Salads" value={salads.length} sub={`${salads.filter(s=>s.is_active).length} active`} />
-          <StatCard label="Active Ads" value={ads.filter(a => a.is_active && (!a.expires_at || new Date(a.expires_at) > new Date())).length} sub={`${ads.length} total`} />
-          <StatCard label="Plans" value={3} sub="Daily · Weekly · Monthly" className="hidden md:block" />
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          <StatCard label="Total Salads" value={salads.length} sub={`${salads.filter((s) => s.is_active).length} active`} />
+          <StatCard label="Active Plans" value={activePlans} sub={`${plans.length} total`} />
+          <StatCard label="Active Ads" value={activeAds} sub={`${ads.length} total`} />
+          <StatCard label="WhatsApp" value={1} sub="Configurable in Settings" />
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-1 bg-[#111111] border border-[#2a2a2a] p-1 rounded-xl mb-8 w-fit">
+        <div className="flex gap-1 bg-[#111111] border border-[#2a2a2a] p-1 rounded-xl mb-8 w-fit flex-wrap">
           {TABS.map((t) => (
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
-                tab === t.id
-                  ? 'bg-green-600 text-white'
-                  : 'text-gray-400 hover:text-white'
+                tab === t.id ? 'bg-green-600 text-white' : 'text-gray-400 hover:text-white'
               }`}
             >
               {t.icon}
@@ -121,6 +124,7 @@ export default function AdminDashboard() {
 
         {/* Tab content */}
         {tab === 'salads' && <SaladsManager initialSalads={salads} />}
+        {tab === 'plans' && <PlansManager initialPlans={plans} />}
         {tab === 'ads' && <AdsManager initialAds={ads} />}
         {tab === 'settings' && <SettingsManager initialSettings={settings} />}
       </div>

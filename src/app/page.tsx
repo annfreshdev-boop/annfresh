@@ -54,7 +54,7 @@ export default async function HomePage() {
   const { salads, ads, plans, whatsappNumber } = await getData()
 
   return (
-    <main className="bg-[#0a0a0a] min-h-screen">
+    <main className="bg-white dark:bg-[#0a0a0a] min-h-screen">
       <Navbar />
       <Hero />
       <AdsBanner ads={ads} />

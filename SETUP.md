@@ -27,10 +27,11 @@ Download and install from https://nodejs.org (choose the LTS version).
 3. Check your email and set a password — this is your admin login
 
 ### Get Your API Keys
-1. Go to **Settings → API**
-2. Copy:
-   - **Project URL** (looks like `https://xxxx.supabase.co`)
-   - **anon public key** (long string under "Project API keys")
+1. Go to **Settings → API Keys**
+2. If you see a **"Create new API Keys"** button, click it to generate the new-format keys
+3. Copy:
+   - **Project URL** (shown at the top, looks like `https://xxxx.supabase.co`)
+   - **Publishable key** (starts with `sb_publishable_...`) — this is the client-safe key that replaced the old "anon" key
 
 ---
 
@@ -49,7 +50,7 @@ cp .env.local.example .env.local
 Edit `.env.local` and fill in your Supabase values:
 ```
 NEXT_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
+NEXT_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_your-key-here
 ```
 
 ```bash
@@ -80,8 +81,8 @@ you a confirmation email the first time a form is submitted.
 2. Go to https://vercel.com → **Add New Project → Import Git Repository**
 3. Select your repo
 4. Under **Environment Variables**, add:
-   - `NEXT_PUBLIC_SUPABASE_URL` = your Supabase URL
-   - `NEXT_PUBLIC_SUPABASE_ANON_KEY` = your anon key
+   - `NEXT_PUBLIC_SUPABASE_URL` = your Supabase Project URL
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY` = your Supabase Publishable key (`sb_publishable_...`)
 5. Click **Deploy** — done!
 
 ### Option B — Via Vercel CLI

@@ -30,6 +30,7 @@ CREATE TABLE IF NOT EXISTS plans (
   id          UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   name        TEXT NOT NULL,
   duration    TEXT CHECK (duration IN ('daily', 'weekly', 'monthly')) NOT NULL,
+  days_count  INTEGER,                -- e.g. 5 or 7 for weekly, 20 or 30 for monthly
   price       DECIMAL(10,2) NOT NULL,
   description TEXT NOT NULL DEFAULT '',
   features    TEXT[] NOT NULL DEFAULT '{}',
@@ -90,10 +91,11 @@ INSERT INTO settings (key, value) VALUES
 ON CONFLICT (key) DO NOTHING;
 
 -- Default plans
-INSERT INTO plans (name, duration, price, description, features, is_custom, is_active, is_popular) VALUES
+INSERT INTO plans (name, duration, days_count, price, description, features, is_custom, is_active, is_popular) VALUES
   (
     'Daily Fresh',
     'daily',
+    1,
     149,
     'A fresh salad every single day',
     ARRAY['1 salad per day', 'Seasonal ingredients', 'Delivery included', 'Calorie info'],
@@ -102,6 +104,7 @@ INSERT INTO plans (name, duration, price, description, features, is_custom, is_a
   (
     'Weekly Wellness',
     'weekly',
+    7,
     799,
     '7 days of curated, healthy salads',
     ARRAY['7 salads per week', 'Variety guaranteed', 'Free delivery', 'Nutrition tracking', 'Mix of veg & non-veg'],
@@ -110,6 +113,7 @@ INSERT INTO plans (name, duration, price, description, features, is_custom, is_a
   (
     'Monthly Mastery',
     'monthly',
+    30,
     2499,
     '30 days — your healthiest month ever',
     ARRAY['30 salads per month', 'Weekly menu preview', 'Priority delivery', 'Dedicated support', 'Best value'],
