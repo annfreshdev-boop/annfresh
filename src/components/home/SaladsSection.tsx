@@ -12,14 +12,25 @@ interface Props {
   salads: Salad[]
 }
 
+const PAGE_SIZE = 9
+
 export default function SaladsSection({ salads }: Props) {
   const [filter, setFilter] = useState<Filter>('All')
+  const [showCount, setShowCount] = useState(PAGE_SIZE)
 
-  const visible = salads.filter((s) => {
+  function changeFilter(f: Filter) {
+    setFilter(f)
+    setShowCount(PAGE_SIZE)
+  }
+
+  const filtered = salads.filter((s) => {
     if (filter === 'Veg') return s.type === 'veg'
     if (filter === 'Non-Veg') return s.type === 'non-veg'
     return true
   })
+
+  const visible = filtered.slice(0, showCount)
+  const hasMore = showCount < filtered.length
 
   return (
     <section id="salads" className="py-24 px-4 bg-white dark:bg-[#0a0a0a]">
@@ -41,7 +52,7 @@ export default function SaladsSection({ salads }: Props) {
           {FILTERS.map((f) => (
             <button
               key={f}
-              onClick={() => setFilter(f)}
+              onClick={() => changeFilter(f)}
               className={`px-5 py-2 rounded-full text-sm font-semibold transition-all ${
                 filter === f
                   ? 'bg-green-600 text-white'
@@ -53,14 +64,30 @@ export default function SaladsSection({ salads }: Props) {
           ))}
         </div>
 
-        {visible.length === 0 ? (
+        {filtered.length === 0 ? (
           <div className="text-center py-20 text-slate-400 dark:text-gray-500">No salads available right now.</div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {visible.map((salad) => (
-              <SaladCard key={salad.id} salad={salad} />
-            ))}
-          </div>
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {visible.map((salad) => (
+                <SaladCard key={salad.id} salad={salad} />
+              ))}
+            </div>
+
+            <div className="mt-10 flex flex-col items-center gap-3">
+              <p className="text-slate-400 dark:text-gray-500 text-sm">
+                Showing {visible.length} of {filtered.length} salads
+              </p>
+              {hasMore && (
+                <button
+                  onClick={() => setShowCount((c) => c + PAGE_SIZE)}
+                  className="px-8 py-3 bg-green-600 hover:bg-green-500 text-white font-bold rounded-full text-sm transition-colors"
+                >
+                  Load More
+                </button>
+              )}
+            </div>
+          </>
         )}
       </div>
     </section>
