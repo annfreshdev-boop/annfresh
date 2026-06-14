@@ -45,31 +45,31 @@ export default function SettingsManager({ initialSettings }: Props) {
   return (
     <div>
       <div className="mb-6">
-        <h2 className="text-white font-black text-xl">Settings</h2>
-        <p className="text-gray-500 text-sm">Store-wide configuration</p>
+        <h2 className="text-slate-900 dark:text-white font-black text-xl">Settings</h2>
+        <p className="text-slate-400 dark:text-gray-500 text-sm">Store-wide configuration</p>
       </div>
 
-      <div className="bg-[#111111] border border-[#2a2a2a] rounded-2xl p-6 max-w-xl space-y-5">
+      <div className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#2a2a2a] rounded-2xl p-6 max-w-xl space-y-5 shadow-sm dark:shadow-none">
         <div>
-          <label className="text-gray-400 text-xs font-semibold mb-1.5 block uppercase tracking-wider">
+          <label className="text-slate-500 dark:text-gray-400 text-xs font-semibold mb-1.5 block uppercase tracking-wider">
             WhatsApp Number
           </label>
           <div className="flex gap-2">
-            <span className="bg-[#1a1a1a] border border-[#2a2a2a] text-gray-400 px-3 rounded-lg text-sm flex items-center">+91</span>
+            <span className="bg-slate-100 dark:bg-[#1a1a1a] border border-slate-200 dark:border-[#2a2a2a] text-slate-500 dark:text-gray-400 px-3 rounded-lg text-sm flex items-center">+91</span>
             <input
               type="tel"
               value={whatsapp}
               onChange={(e) => setWhatsapp(e.target.value)}
               placeholder="9876543210"
               maxLength={10}
-              className="flex-1 bg-[#1a1a1a] border border-[#2a2a2a] text-white placeholder-gray-600 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-green-600 transition-colors"
+              className="flex-1 bg-slate-50 dark:bg-[#1a1a1a] border border-slate-200 dark:border-[#2a2a2a] text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-600 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-green-500 dark:focus:border-green-600 transition-colors"
             />
           </div>
-          <p className="text-gray-600 text-xs mt-1">This number is shown as the WhatsApp contact on your website.</p>
+          <p className="text-slate-400 dark:text-gray-600 text-xs mt-1">This number is shown as the WhatsApp contact on your website.</p>
         </div>
 
         <div>
-          <label className="text-gray-400 text-xs font-semibold mb-1.5 block uppercase tracking-wider">
+          <label className="text-slate-500 dark:text-gray-400 text-xs font-semibold mb-1.5 block uppercase tracking-wider">
             Contact Form Email
           </label>
           <input
@@ -77,15 +77,15 @@ export default function SettingsManager({ initialSettings }: Props) {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@annfresh.com"
-            className="w-full bg-[#1a1a1a] border border-[#2a2a2a] text-white placeholder-gray-600 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-green-600 transition-colors"
+            className="w-full bg-slate-50 dark:bg-[#1a1a1a] border border-slate-200 dark:border-[#2a2a2a] text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-600 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-green-500 dark:focus:border-green-600 transition-colors"
           />
-          <p className="text-gray-600 text-xs mt-1">
+          <p className="text-slate-400 dark:text-gray-600 text-xs mt-1">
             Update the email in your contact form&apos;s action URL in ContactSection.tsx to match.
           </p>
         </div>
 
         {error && (
-          <p className="text-red-400 text-sm bg-red-400/10 border border-red-400/20 rounded-lg px-3 py-2">{error}</p>
+          <p className="text-red-600 dark:text-red-400 text-sm bg-red-50 dark:bg-red-400/10 border border-red-200 dark:border-red-400/20 rounded-lg px-3 py-2">{error}</p>
         )}
 
         <button

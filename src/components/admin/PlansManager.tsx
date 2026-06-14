@@ -106,8 +106,8 @@ export default function PlansManager({ initialPlans }: Props) {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-white font-black text-xl">Plans</h2>
-          <p className="text-gray-500 text-sm">{plans.length} plans</p>
+          <h2 className="text-slate-900 dark:text-white font-black text-xl">Plans</h2>
+          <p className="text-slate-400 dark:text-gray-500 text-sm">{plans.length} plans</p>
         </div>
         <button onClick={openNew} className="flex items-center gap-2 bg-green-600 hover:bg-green-500 text-white font-bold px-4 py-2.5 rounded-xl text-sm transition-colors">
           <Plus size={16} /> Add Plan
@@ -116,11 +116,11 @@ export default function PlansManager({ initialPlans }: Props) {
 
       {/* Form modal */}
       {showForm && (
-        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
-          <div className="bg-[#111111] border border-[#2a2a2a] rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-[#2a2a2a]">
-              <h3 className="text-white font-black">{editId ? 'Edit Plan' : 'Add Plan'}</h3>
-              <button onClick={() => setShowForm(false)} className="text-gray-500 hover:text-white"><X size={18} /></button>
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#2a2a2a] rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-xl dark:shadow-none">
+            <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-slate-100 dark:border-[#2a2a2a]">
+              <h3 className="text-slate-900 dark:text-white font-black">{editId ? 'Edit Plan' : 'Add Plan'}</h3>
+              <button onClick={() => setShowForm(false)} className="text-slate-400 dark:text-gray-500 hover:text-slate-700 dark:hover:text-white"><X size={18} /></button>
             </div>
 
             <div className="p-6 space-y-4">
@@ -151,7 +151,7 @@ export default function PlansManager({ initialPlans }: Props) {
                     placeholder={form.duration === 'weekly' ? '5 or 7' : form.duration === 'monthly' ? '20 or 30' : '1'}
                     className={inp}
                   />
-                  <p className="text-gray-600 text-xs mt-1">{durationHint[form.duration]}</p>
+                  <p className="text-slate-400 dark:text-gray-600 text-xs mt-1">{durationHint[form.duration]}</p>
                 </Field>
               </div>
 
@@ -178,25 +178,25 @@ export default function PlansManager({ initialPlans }: Props) {
                   placeholder={"7 salads per week\nFree delivery\nNutrition tracking"}
                   className={inp + ' resize-none font-mono text-xs leading-relaxed'}
                 />
-                <p className="text-gray-600 text-xs mt-1">Each line becomes a bullet point on the plan card.</p>
+                <p className="text-slate-400 dark:text-gray-600 text-xs mt-1">Each line becomes a bullet point on the plan card.</p>
               </Field>
 
               <div className="flex gap-6">
                 <label className="flex items-center gap-2.5 cursor-pointer">
                   <input type="checkbox" checked={form.is_active} onChange={(e) => setForm({ ...form, is_active: e.target.checked })} className="w-4 h-4 accent-green-500" />
-                  <span className="text-gray-300 text-sm">Active</span>
+                  <span className="text-slate-600 dark:text-gray-300 text-sm">Active</span>
                 </label>
                 <label className="flex items-center gap-2.5 cursor-pointer">
                   <input type="checkbox" checked={form.is_popular} onChange={(e) => setForm({ ...form, is_popular: e.target.checked })} className="w-4 h-4 accent-green-500" />
-                  <span className="text-gray-300 text-sm">Mark as Popular</span>
+                  <span className="text-slate-600 dark:text-gray-300 text-sm">Mark as Popular</span>
                 </label>
               </div>
 
-              {error && <p className="text-red-400 text-sm bg-red-400/10 border border-red-400/20 rounded-lg px-3 py-2">{error}</p>}
+              {error && <p className="text-red-600 dark:text-red-400 text-sm bg-red-50 dark:bg-red-400/10 border border-red-200 dark:border-red-400/20 rounded-lg px-3 py-2">{error}</p>}
 
               <div className="flex gap-3 pt-2">
-                <button onClick={() => setShowForm(false)} className="flex-1 bg-[#1a1a1a] hover:bg-[#2a2a2a] border border-[#2a2a2a] text-white font-semibold py-2.5 rounded-xl text-sm transition-colors">Cancel</button>
-                <button onClick={handleSave} disabled={saving} className="flex-1 bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white font-bold py-2.5 rounded-xl text-sm flex items-center justify-center gap-2 transition-colors">
+                <button onClick={() => setShowForm(false)} className={cancelBtn}>Cancel</button>
+                <button onClick={handleSave} disabled={saving} className={saveBtn}>
                   {saving ? <span className="animate-spin border-2 border-white/30 border-t-white rounded-full w-3.5 h-3.5" /> : <Check size={14} />}
                   {saving ? 'Saving...' : 'Save Plan'}
                 </button>
@@ -207,30 +207,30 @@ export default function PlansManager({ initialPlans }: Props) {
       )}
 
       {plans.length === 0 ? (
-        <div className="text-center py-16 text-gray-500 border border-dashed border-[#2a2a2a] rounded-2xl">
+        <div className="text-center py-16 text-slate-400 dark:text-gray-500 border-2 border-dashed border-slate-200 dark:border-[#2a2a2a] rounded-2xl">
           No plans yet. Add your first one!
         </div>
       ) : (
         <div className="space-y-3">
           {plans.map((p) => (
-            <div key={p.id} className="flex items-center gap-4 bg-[#111111] border border-[#2a2a2a] rounded-xl p-4">
-              <div className="w-10 h-10 bg-green-600/10 border border-green-600/20 rounded-lg flex items-center justify-center shrink-0">
-                <span className="text-green-500 text-xs font-black uppercase">
+            <div key={p.id} className="flex items-center gap-4 bg-white dark:bg-[#111111] border border-slate-200 dark:border-[#2a2a2a] rounded-xl p-4 shadow-sm dark:shadow-none">
+              <div className="w-10 h-10 bg-green-50 dark:bg-green-600/10 border border-green-200 dark:border-green-600/20 rounded-lg flex items-center justify-center shrink-0">
+                <span className="text-green-600 dark:text-green-500 text-xs font-black uppercase">
                   {p.duration === 'daily' ? 'D' : p.duration === 'weekly' ? 'W' : 'M'}
                 </span>
               </div>
 
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-white font-bold text-sm">{p.name}</span>
+                  <span className="text-slate-900 dark:text-white font-bold text-sm">{p.name}</span>
                   {p.is_popular && (
-                    <span className="flex items-center gap-0.5 text-xs bg-green-600/20 text-green-400 border border-green-600/30 px-1.5 py-0.5 rounded-full">
+                    <span className="flex items-center gap-0.5 text-xs bg-green-100 dark:bg-green-600/20 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-600/30 px-1.5 py-0.5 rounded-full">
                       <Star size={9} fill="currentColor" /> Popular
                     </span>
                   )}
                 </div>
-                <div className="flex items-center gap-3 mt-0.5 text-xs text-gray-500">
-                  <span className="text-green-400 font-bold">₹{p.price}{durationSuffix[p.duration]}</span>
+                <div className="flex items-center gap-3 mt-0.5 text-xs text-slate-400 dark:text-gray-500">
+                  <span className="text-green-600 dark:text-green-400 font-bold">₹{p.price}{durationSuffix[p.duration]}</span>
                   <span>{daysLabel(p)}</span>
                   <span>{p.features.length} features</span>
                 </div>
@@ -239,12 +239,12 @@ export default function PlansManager({ initialPlans }: Props) {
               <div className="flex items-center gap-2 shrink-0">
                 <button
                   onClick={() => toggleField(p, 'is_active')}
-                  className={`text-xs px-2.5 py-1 rounded-full font-semibold border transition-colors ${p.is_active ? 'bg-green-600/10 text-green-400 border-green-600/30 hover:bg-green-600/20' : 'bg-[#1a1a1a] text-gray-500 border-[#2a2a2a] hover:border-gray-500'}`}
+                  className={`text-xs px-2.5 py-1 rounded-full font-semibold border transition-colors ${p.is_active ? activeBadge : hiddenBadge}`}
                 >
                   {p.is_active ? 'Live' : 'Hidden'}
                 </button>
-                <button onClick={() => openEdit(p)} className="text-gray-500 hover:text-white p-1.5 hover:bg-[#2a2a2a] rounded-lg transition-colors"><Pencil size={14} /></button>
-                <button onClick={() => handleDelete(p.id)} className="text-gray-500 hover:text-red-400 p-1.5 hover:bg-red-400/10 rounded-lg transition-colors"><Trash2 size={14} /></button>
+                <button onClick={() => openEdit(p)} className={iconBtn}><Pencil size={14} /></button>
+                <button onClick={() => handleDelete(p.id)} className={deleteBtn}><Trash2 size={14} /></button>
               </div>
             </div>
           ))}
@@ -257,10 +257,16 @@ export default function PlansManager({ initialPlans }: Props) {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="text-gray-400 text-xs font-semibold mb-1.5 block uppercase tracking-wider">{label}</label>
+      <label className="text-slate-500 dark:text-gray-400 text-xs font-semibold mb-1.5 block uppercase tracking-wider">{label}</label>
       {children}
     </div>
   )
 }
 
-const inp = 'w-full bg-[#1a1a1a] border border-[#2a2a2a] text-white placeholder-gray-600 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-green-600 transition-colors'
+const inp = 'w-full bg-slate-50 dark:bg-[#1a1a1a] border border-slate-200 dark:border-[#2a2a2a] text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-600 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-green-500 dark:focus:border-green-600 transition-colors'
+const cancelBtn = 'flex-1 bg-slate-100 dark:bg-[#1a1a1a] hover:bg-slate-200 dark:hover:bg-[#2a2a2a] border border-slate-200 dark:border-[#2a2a2a] text-slate-700 dark:text-white font-semibold py-2.5 rounded-xl text-sm transition-colors'
+const saveBtn = 'flex-1 bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white font-bold py-2.5 rounded-xl text-sm flex items-center justify-center gap-2 transition-colors'
+const activeBadge = 'bg-green-100 dark:bg-green-600/10 text-green-700 dark:text-green-400 border-green-200 dark:border-green-600/30 hover:bg-green-200 dark:hover:bg-green-600/20'
+const hiddenBadge = 'bg-slate-100 dark:bg-[#1a1a1a] text-slate-500 dark:text-gray-500 border-slate-200 dark:border-[#2a2a2a] hover:border-slate-400 dark:hover:border-gray-500'
+const iconBtn = 'text-slate-400 dark:text-gray-500 hover:text-slate-700 dark:hover:text-white p-1.5 hover:bg-slate-100 dark:hover:bg-[#2a2a2a] rounded-lg transition-colors'
+const deleteBtn = 'text-slate-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 p-1.5 hover:bg-red-50 dark:hover:bg-red-400/10 rounded-lg transition-colors'
