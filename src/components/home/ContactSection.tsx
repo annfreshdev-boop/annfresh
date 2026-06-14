@@ -1,9 +1,43 @@
+'use client'
+
+import { useState } from 'react'
+import emailjs from '@emailjs/browser'
+
 interface Props {
   whatsappNumber: string
 }
 
 export default function ContactSection({ whatsappNumber }: Props) {
   const waLink = `https://wa.me/91${whatsappNumber}?text=Hi%20Annfresh%2C%20I%20am%20interested%20in%20your%20salad%20plans!`
+
+  const [form, setForm] = useState({ name: '', email: '', phone: '', message: '' })
+  const [status, setStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle')
+
+  function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
+    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setStatus('sending')
+    try {
+      await emailjs.send(
+        process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID!,
+        process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID!,
+        {
+          from_name: form.name,
+          from_email: form.email,
+          phone: form.phone || 'Not provided',
+          message: form.message,
+        },
+        process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY!
+      )
+      setStatus('sent')
+      setForm({ name: '', email: '', phone: '', message: '' })
+    } catch {
+      setStatus('error')
+    }
+  }
 
   return (
     <section id="contact" className="py-24 px-4 bg-white dark:bg-[#0a0a0a]">
@@ -16,8 +50,7 @@ export default function ContactSection({ whatsappNumber }: Props) {
             Let&apos;s Talk Salads
           </h2>
           <p className="text-slate-500 dark:text-gray-400 mt-4 max-w-md mx-auto">
-            Questions about plans, custom orders, or just want to say hi? We&apos;re
-            a message away.
+            Questions about plans, custom orders, or just want to say hi? We&apos;re a message away.
           </p>
         </div>
 
@@ -47,42 +80,55 @@ export default function ContactSection({ whatsappNumber }: Props) {
 
           {/* Contact form */}
           <form
-            action="https://formsubmit.co/your@email.com"
-            method="POST"
+            onSubmit={handleSubmit}
             className="bg-slate-50 dark:bg-[#111111] border border-slate-200 dark:border-[#2a2a2a] rounded-2xl p-8 flex flex-col gap-4 shadow-sm dark:shadow-none"
           >
-            <input type="hidden" name="_subject" value="New message from Annfresh website" />
-            <input type="hidden" name="_captcha" value="false" />
-            <input type="hidden" name="_next" value="https://yoursite.com?sent=1" />
-
             <h3 className="text-slate-900 dark:text-white font-black text-xl mb-1">Send a Message</h3>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="text-slate-500 dark:text-gray-400 text-xs font-semibold mb-1.5 block uppercase tracking-wider">Name</label>
-                <input type="text" name="name" required placeholder="Your name" className={inputCls} />
+                <input name="name" type="text" required value={form.name} onChange={handleChange} placeholder="Your name" className={inputCls} />
               </div>
               <div>
                 <label className="text-slate-500 dark:text-gray-400 text-xs font-semibold mb-1.5 block uppercase tracking-wider">Phone</label>
-                <input type="tel" name="phone" placeholder="Your phone" className={inputCls} />
+                <input name="phone" type="tel" value={form.phone} onChange={handleChange} placeholder="Your phone" className={inputCls} />
               </div>
             </div>
 
             <div>
               <label className="text-slate-500 dark:text-gray-400 text-xs font-semibold mb-1.5 block uppercase tracking-wider">Email</label>
-              <input type="email" name="email" required placeholder="your@email.com" className={inputCls} />
+              <input name="email" type="email" required value={form.email} onChange={handleChange} placeholder="your@email.com" className={inputCls} />
             </div>
 
             <div>
               <label className="text-slate-500 dark:text-gray-400 text-xs font-semibold mb-1.5 block uppercase tracking-wider">Message</label>
-              <textarea name="message" required rows={4} placeholder="Tell us what you need..." className={inputCls + ' resize-none'} />
+              <textarea name="message" required rows={4} value={form.message} onChange={handleChange} placeholder="Tell us what you need..." className={inputCls + ' resize-none'} />
             </div>
+
+            {status === 'sent' && (
+              <div className="bg-green-50 dark:bg-green-600/10 border border-green-200 dark:border-green-600/30 text-green-700 dark:text-green-400 text-sm rounded-lg px-4 py-3 font-semibold">
+                ✓ Message sent! We&apos;ll get back to you soon.
+              </div>
+            )}
+            {status === 'error' && (
+              <div className="bg-red-50 dark:bg-red-400/10 border border-red-200 dark:border-red-400/20 text-red-600 dark:text-red-400 text-sm rounded-lg px-4 py-3">
+                Something went wrong. Please try WhatsApp instead.
+              </div>
+            )}
 
             <button
               type="submit"
-              className="bg-slate-900 dark:bg-[#1a1a1a] hover:bg-green-600 dark:hover:bg-green-600 border border-slate-200 dark:border-[#2a2a2a] hover:border-green-600 text-white font-bold py-3 rounded-xl transition-all duration-200"
+              disabled={status === 'sending' || status === 'sent'}
+              className="bg-slate-900 dark:bg-[#1a1a1a] hover:bg-green-600 dark:hover:bg-green-600 disabled:opacity-50 border border-slate-200 dark:border-[#2a2a2a] hover:border-green-600 text-white font-bold py-3 rounded-xl transition-all duration-200 flex items-center justify-center gap-2"
             >
-              Send Message →
+              {status === 'sending' ? (
+                <><span className="animate-spin border-2 border-white/30 border-t-white rounded-full w-4 h-4" />Sending...</>
+              ) : status === 'sent' ? (
+                '✓ Sent!'
+              ) : (
+                'Send Message →'
+              )}
             </button>
           </form>
         </div>
